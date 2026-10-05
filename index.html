@@ -134,7 +134,22 @@ input[type=color] { width: 38px; height: 30px; border: 1px solid var(--line); bo
 #result .meta { font: 12px var(--mono); color: var(--muted); }
 #result .actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
 
+kbd { font: 500 10px var(--mono); background: rgba(255,255,255,.1); border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; margin-left: 4px; color: inherit; }
+.hud-right { display: flex; gap: 8px; align-items: center; }
+.hudBtn { display: flex; align-items: center; gap: 8px; border-radius: 999px; padding: 9px 14px; background: var(--panel); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); font: 400 12px var(--display); }
+.hudBtn svg { width: 18px; height: 18px; }
+body.freecam .follow-only, body:not(.freecam) .free-only { display: none !important; }
+#pickedSec .card2 { display: flex; flex-direction: column; gap: 9px; padding: 11px 12px; border-radius: 12px; border: 1px dashed var(--line); background: rgba(255,255,255,.03); }
+#pickedSec.active .card2 { border: 1px solid var(--skin); background: rgba(239,177,94,.08); }
+#pickedTitle { font: 400 13px var(--display); }
+.filebtn { position: relative; display: inline-flex; align-items: center; justify-content: center; font: 600 13px var(--body); color: var(--ink); background: var(--skin); border: 1px solid var(--skin-deep); border-radius: 9px; padding: 8px 11px; cursor: pointer; }
+.filebtn input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.filebtn:focus-within { outline: 2px solid var(--skin); outline-offset: 2px; }
+.traitlist { display: flex; flex-wrap: wrap; gap: 5px; max-height: 172px; overflow-y: auto; padding: 2px; overscroll-behavior: contain; }
+.traitlist button { font-size: 12px; padding: 5px 8px; }
+.wrap-row { display: flex; flex-wrap: wrap; gap: 6px; }
 @media (max-width: 760px) {
+  .hudBtn .lbl { display: none; }
   .rail { top: auto; left: 0; right: 0; bottom: 0; width: auto; max-height: 52%; border-radius: 16px 16px 0 0; border-bottom: 0; padding-bottom: env(safe-area-inset-bottom, 0px); }
   .dock { left: 16px; right: auto; bottom: auto; top: calc(14px + env(safe-area-inset-top, 0px)); }
   #snap { padding: 6px 14px 6px 6px; }
@@ -151,16 +166,25 @@ input[type=color] { width: 38px; height: 30px; border: 1px solid var(--line); bo
 <!-- walking HUD -->
 <div class="hud-top walk-only">
   <div class="pill"><span class="dot"></span><span class="brand">Chonk Photo Booth</span><span class="where" id="where">Sunset Beach</span></div>
+  <div class="hud-right">
+  <button class="hudBtn" data-freecam aria-pressed="false" aria-label="Free camera">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 7l9-4 9 4-9 4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/></svg>
+    <span class="lbl">Free cam</span> <kbd>F</kbd>
+  </button>
   <button id="photoBtn" aria-label="Open photo mode">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
     Photo mode <kbd>P</kbd>
   </button>
+  </div>
 </div>
-<div class="keys walk-only">
-  <span><b>WASD</b> / arrows move</span><span><b>Shift</b> run</span><span><b>Space</b> jump</span><span><b>1</b> wave</span><span><b>2</b> bow</span><span><b>Drag</b> look · <b>scroll</b> zoom</span>
+<div class="keys walk-only follow-only">
+  <span><b>WASD</b> / arrows move</span><span><b>Shift</b> run</span><span><b>Space</b> jump</span><span><b>1</b> wave</span><span><b>2</b> bow</span><span><b>Drag</b> look · <b>scroll</b> zoom</span><span><b>F</b> free cam</span>
+</div>
+<div class="keys walk-only free-only">
+  <span><b>WASD</b> fly</span><span><b>Q</b> / <b>E</b> down / up</span><span><b>Shift</b> fast</span><span><b>Drag</b> look · <b>scroll</b> forward</span><span><b>F</b> back to your Chonk</span>
 </div>
 <div id="joy" class="walk-only touch-only" aria-hidden="true"><i></i></div>
-<div class="tbtns walk-only touch-only">
+<div class="tbtns walk-only touch-only follow-only">
   <button class="small" id="tWave">Wave</button>
   <button id="tJump">Jump</button>
 </div>
@@ -173,6 +197,25 @@ input[type=color] { width: 38px; height: 30px; border: 1px solid var(--line); bo
     <button id="closePhoto">Back to walking</button>
   </header>
   <div class="rail-body">
+    <section id="pickedSec">
+      <h2>Selected</h2>
+      <div class="card2">
+        <div class="row" style="justify-content:space-between"><strong id="pickedTitle">Nothing selected</strong><button id="deselect" hidden>Done <kbd>Esc</kbd></button></div>
+        <p class="hint" id="pickHint" style="margin:0">Click a Chonk or prop in the scene to move or turn it. <span id="paintHint">Click a framed picture to hang your own image in it.</span></p>
+        <div id="gizmoRow" hidden>
+          <div class="seg" id="gizmoModes"><button type="button" data-mode="translate">Move<kbd>G</kbd></button><button type="button" data-mode="rotate">Turn<kbd>R</kbd></button><button type="button" data-mode="scale">Size<kbd>S</kbd></button></div>
+          <p class="hint" style="margin:8px 0 0">Drag the coloured handles in the scene.</p>
+        </div>
+        <div class="wrap-row" id="propActions" hidden><button id="propDrop" type="button">Drop to floor</button><button id="propDup" type="button">Duplicate</button><button id="propDelete" type="button">Delete <kbd>Del</kbd></button></div>
+        <div id="paintingTools" hidden style="display:flex;flex-direction:column;gap:8px">
+          <label class="filebtn">Upload an image<input type="file" id="paintFile" accept="image/*" aria-label="Upload an image for this frame"></label>
+          <form class="row" id="paintLinkForm"><input id="paintLink" type="text" placeholder="…or paste an image link" aria-label="Image link" spellcheck="false" autocomplete="off"><button type="submit">Use</button></form>
+          <button id="paintReset" type="button">Restore the original</button>
+          <div class="status" id="paintStatus"></div>
+        </div>
+      </div>
+    </section>
+
     <section>
       <h2>Chonks in the scene</h2>
       <div class="roster" id="roster"></div>
@@ -196,6 +239,15 @@ input[type=color] { width: 38px; height: 30px; border: 1px solid var(--line); bo
       <div class="status" id="status"></div>
       <div class="hint">Samples</div>
       <div class="chips" id="samples"></div>
+    </section>
+
+    <section>
+      <h2>Props <span id="propCount" style="text-transform:none;letter-spacing:0;font-family:var(--mono)"></span></h2>
+      <p class="hint" style="margin:0">Every Chonks 3D trait, ready to drop into the scene.</p>
+      <div class="chips" id="traitCats"></div>
+      <input type="text" id="traitSearch" placeholder="Search all 270 traits" aria-label="Search traits" spellcheck="false" autocomplete="off">
+      <div class="traitlist" id="traitList"></div>
+      <div class="roster" id="propList"></div>
     </section>
 
     <section>
@@ -225,7 +277,7 @@ input[type=color] { width: 38px; height: 30px; border: 1px solid var(--line); bo
       <label class="slider" for="lens">Lens <input type="range" id="lens" min="18" max="85" step="1" value="35"><output id="lensOut">35mm</output></label>
       <label class="check"><input type="checkbox" id="tag" checked> Add Chonk tag to photo</label>
       <label class="check"><input type="checkbox" id="guides" checked> Show thirds grid</label>
-      <button id="resetCam">Reset camera</button>
+      <div class="row"><button data-freecam aria-pressed="false" style="flex:1">Free camera <kbd>F</kbd></button><button id="resetCam" style="flex:1">Reset camera</button></div>
     </section>
   </div>
 </aside>
@@ -251,6 +303,7 @@ input[type=color] { width: 38px; height: 30px; border: 1px solid var(--line); bo
 </script>
 <script type="module">
 import * as THREE from "three";
+import { TransformControls } from "three/addons/controls/TransformControls.js";
 
 /* ===================================================================
    Sample Chonks (real onchain zMaps, packed: bbox grid + palette, deflate)
@@ -423,7 +476,7 @@ function canvasTex(w, h, draw, repeat) {
   return t;
 }
 class Kit {
-  constructor(group) { this.g = group; this.colliders = []; this.walk = []; this.occ = []; this.lights = []; this.updates = []; }
+  constructor(group) { this.g = group; this.colliders = []; this.walk = []; this.occ = []; this.lights = []; this.updates = []; this.paintings = []; }
   // axis-aligned box sitting on y (bottom), centred on x/z
   box(m, w, h, d, x, y, z, o = {}) {
     const b = new THREE.Mesh(BOX, m); b.scale.set(w, h, d); b.position.set(x, y + h / 2, z); if (o.ry) b.rotation.y = o.ry;
@@ -450,6 +503,8 @@ class Kit {
     add(w + frameW * 2, frameW, 0, h / 2 + frameW / 2); add(w + frameW * 2, frameW, 0, -h / 2 - frameW / 2);
     add(frameW, h, -w / 2 - frameW / 2, 0); add(frameW, h, w / 2 + frameW / 2, 0);
     const art = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.85 })); art.position.z = 0.02; g.add(art);
+    // every framed picture can be swapped for the player's own image
+    const p = { group: g, art, w, h, idx: this.paintings.length, origMat: art.material }; art.userData.painting = p; this.paintings.push(p);
     this.g.add(g); return g;
   }
   light(l) { this.g.add(l); this.lights.push(l); return l; }
@@ -963,6 +1018,9 @@ stageEl.appendChild(renderer.domElement);
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(40, 1, 0.05, 2000);
 scene.add(camera);
+const gizmo = new TransformControls(camera, renderer.domElement);
+gizmo.setSize(0.85);
+const gizmoHelper = gizmo.getHelper(); scene.add(gizmoHelper);
 
 const hemi = new THREE.HemisphereLight(0xffffff, 0x888888, 1.0); scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xffffff, 2.2);
@@ -991,7 +1049,7 @@ class Chonk {
   constructor(vox, { id, label, accessory = null }) {
     this.rig = new ChonkRig(); this.rig.setVoxels(vox, accessory);
     this.vox = vox; this.accessory = accessory; this.id = id; this.label = label;
-    this.holder = new THREE.Group(); this.holder.add(this.rig.object); scene.add(this.holder);
+    this.holder = new THREE.Group(); this.holder.add(this.rig.object); this.holder.userData.chonk = this; scene.add(this.holder);
     this.pos = new THREE.Vector3(); this.yaw = 0; this.vy = 0; this.onGround = true;
     this.pose = "idle"; this.freeze = false; this.phase = 0.18; this.moveAnim = "idle"; this.offset = Math.random() * 10;
   }
@@ -1024,6 +1082,7 @@ function applyLocation(id, { keepPositions = false } = {}) {
   document.getElementById("where").textContent = L.name;
   for (const b of document.querySelectorAll(".loc")) b.setAttribute("aria-pressed", b.dataset.id === id);
   if (!keepPositions) placeAtSpawn();
+  onLocationBuilt();
   saveSoon();
 }
 const sunDir = new THREE.Vector3(0.4, 0.8, 0.45);
@@ -1084,11 +1143,14 @@ let jumpQueued = false;
 const isTyping = () => ["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement?.tagName);
 addEventListener("keydown", (e) => {
   if (isTyping()) return;
-  if (e.key === "Escape") { if (!resultEl.hidden) { resultEl.hidden = true; return; } if (mode === "photo") setMode("walk"); return; }
+  if (e.key === "Escape") { if (!resultEl.hidden) { resultEl.hidden = true; return; } if (picked) { setPicked(null); return; } if (mode === "photo") setMode("walk"); return; }
   if (!resultEl.hidden) return;
   if (e.code === "KeyP") { setMode(mode === "photo" ? "walk" : "photo"); return; }
-  if (mode !== "walk") return;
+  if (e.code === "KeyF") { toggleFreeCam(); return; }
+  if (mode === "photo" && picked && editKey(e)) return;
+  if (mode !== "walk" && camMode !== "free") return;
   keys.add(e.code);
+  if (camMode === "free") { if (e.code === "Space" || e.code.startsWith("Arrow")) e.preventDefault(); return; }
   if (e.code === "Space") { jumpQueued = true; e.preventDefault(); }
   if (e.code === "Digit1" && sel) sel.moveAnim = "wave";
   if (e.code === "Digit2" && sel) sel.moveAnim = "bow";
@@ -1119,19 +1181,35 @@ const WALK_FOV = 50;
 let snapCamera = true;
 (function setupCameraInput() {
   const el = renderer.domElement, pts = new Map(); let pinch = 0;
-  el.addEventListener("pointerdown", (e) => { el.setPointerCapture(e.pointerId); pts.set(e.pointerId, { x: e.clientX, y: e.clientY }); if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch = Math.hypot(a.x - b.x, a.y - b.y); } });
-  el.addEventListener("pointermove", (e) => {
-    const p = pts.get(e.pointerId); if (!p) return;
-    if (pts.size === 1) { cam.yaw -= (e.clientX - p.x) * 0.006; cam.pitch = Math.max(-0.25, Math.min(1.35, cam.pitch + (e.clientY - p.y) * 0.005)); }
-    p.x = e.clientX; p.y = e.clientY;
-    if (pts.size === 2) { const [a, b] = [...pts.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y); if (pinch) cam.dist = Math.max(0.7, Math.min(14, cam.dist * pinch / d)); pinch = d; }
+  let down = null;
+  el.addEventListener("pointerdown", (e) => {
+    if (gizmo.dragging) return;                       // the move/rotate handles took this press
+    el.setPointerCapture(e.pointerId); pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    down = pts.size === 1 ? { x: e.clientX, y: e.clientY, id: e.pointerId } : null;
+    if (pts.size === 2) { const [a, b] = [...pts.values()]; pinch = Math.hypot(a.x - b.x, a.y - b.y); }
   });
-  const end = (e) => { pts.delete(e.pointerId); pinch = 0; };
+  el.addEventListener("pointermove", (e) => {
+    const p = pts.get(e.pointerId); if (!p || gizmo.dragging) return;
+    const dx = e.clientX - p.x, dy = e.clientY - p.y;
+    if (pts.size === 1) {
+      if (camMode === "free") { freeCam.yaw -= dx * 0.0042; freeCam.pitch = Math.max(-1.5, Math.min(1.5, freeCam.pitch - dy * 0.0042)); }
+      else { cam.yaw -= dx * 0.006; cam.pitch = Math.max(-0.25, Math.min(1.35, cam.pitch + dy * 0.005)); }
+    }
+    p.x = e.clientX; p.y = e.clientY;
+    if (pts.size === 2) { const [a, b] = [...pts.values()]; const d = Math.hypot(a.x - b.x, a.y - b.y);
+      if (pinch) { if (camMode === "free") freeCamDolly((d - pinch) * 0.02); else cam.dist = Math.max(0.7, Math.min(14, cam.dist * pinch / d)); } pinch = d; }
+  });
+  const end = (e) => {
+    if (down && down.id === e.pointerId && e.type === "pointerup" && Math.hypot(e.clientX - down.x, e.clientY - down.y) < 6 && mode === "photo" && !gizmo.dragging) pickAt(e.clientX, e.clientY);
+    down = null; pts.delete(e.pointerId); pinch = 0;
+  };
   el.addEventListener("pointerup", end); el.addEventListener("pointercancel", end);
-  el.addEventListener("wheel", (e) => { e.preventDefault(); cam.dist = Math.max(0.7, Math.min(14, cam.dist * Math.exp(e.deltaY * 0.0012))); }, { passive: false });
+  el.addEventListener("wheel", (e) => { e.preventDefault();
+    if (camMode === "free") freeCamDolly(-e.deltaY * 0.004); else cam.dist = Math.max(0.7, Math.min(14, cam.dist * Math.exp(e.deltaY * 0.0012))); }, { passive: false });
 })();
 const camRay = new THREE.Raycaster();
 function updateCamera(dt) {
+  if (camMode === "free") { updateFreeCam(dt); return; }
   if (!sel) return;
   const want = tmpV.copy(sel.pos).add(new THREE.Vector3(0, 0.62, 0));
   if (snapCamera) { cam.target.copy(want); snapCamera = false; } else cam.target.lerp(want, 1 - Math.exp(-dt * 10));
@@ -1154,7 +1232,7 @@ function updateCamera(dt) {
 function stepSelected(dt) {
   const c = sel; if (!c) return;
   let ix = 0, iz = 0;
-  if (mode === "walk") {
+  if (mode === "walk" && camMode === "follow") {
     if (keys.has("KeyW") || keys.has("ArrowUp")) iz += 1; if (keys.has("KeyS") || keys.has("ArrowDown")) iz -= 1;
     if (keys.has("KeyD") || keys.has("ArrowRight")) ix += 1; if (keys.has("KeyA") || keys.has("ArrowLeft")) ix -= 1;
     if (joy.active) { ix += joy.x; iz -= joy.y; }
@@ -1174,7 +1252,7 @@ function stepSelected(dt) {
     let dy = Math.atan2(dx, dz) - c.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); c.yaw += dy * Math.min(1, dt * 14);
     if (c.onGround) c.moveAnim = running ? "run" : "walk";
   } else if (c.onGround && (c.moveAnim === "walk" || c.moveAnim === "run" || c.moveAnim === "jump")) c.moveAnim = "idle";
-  if (jumpQueued && c.onGround && mode === "walk") { c.vy = JUMP_VEL * (loc.lowGravity ? 1.1 : 1); c.onGround = false; c.moveAnim = "jump"; }
+  if (jumpQueued && c.onGround && mode === "walk" && camMode === "follow") { c.vy = JUMP_VEL * (loc.lowGravity ? 1.1 : 1); c.onGround = false; c.moveAnim = "jump"; }
   jumpQueued = false;
   // vertical
   const gy = groundAt(c.pos.x, c.pos.z, c.pos.y + STEP + 0.05);
@@ -1196,11 +1274,12 @@ function setMode(m) {
   if (m === "photo" && sel && ["wave", "bow"].includes(sel.moveAnim)) sel.pose = sel.moveAnim;
   if (m === "walk" && sel) sel.moveAnim = "idle";
   // photo mode swings round to a 3/4 front view of your Chonk; walking uses a wider view from behind
-  if (m === "photo" && sel) { cam.yaw = sel.yaw + 0.55; cam.pitch = 0.16; applyLens(); }
-  if (m === "walk") { camera.fov = WALK_FOV; camera.updateProjectionMatrix(); if (sel) { cam.yaw = sel.yaw + Math.PI; cam.pitch = 0.3; cam.dist = Math.max(cam.dist, 4.2); } }
+  // (a free camera stays exactly where you put it)
+  if (m === "photo") { applyLens(); if (sel && camMode === "follow") { cam.yaw = sel.yaw + 0.55; cam.pitch = 0.16; } }
+  if (m === "walk") { setPicked(null); camera.fov = WALK_FOV; camera.updateProjectionMatrix(); if (sel && camMode === "follow") { cam.yaw = sel.yaw + Math.PI; cam.pitch = 0.3; cam.dist = Math.max(cam.dist, 4.2); } }
   renderRoster(); syncPoseUI(); layoutFrame();
   // start with about 1.8 m of scene filling the frame height, whatever the screen shape
-  if (m === "photo") { const half = THREE.MathUtils.degToRad(camera.fov) / 2; cam.dist = Math.max(1.2, Math.min(14, 0.9 / Math.tan(half) * innerHeight / frameRect.h)); }
+  if (m === "photo" && camMode === "follow") { const half = THREE.MathUtils.degToRad(camera.fov) / 2; cam.dist = Math.max(1.2, Math.min(14, 0.9 / Math.tan(half) * innerHeight / frameRect.h)); }
 }
 document.getElementById("photoBtn").onclick = () => setMode("photo");
 document.getElementById("closePhoto").onclick = () => setMode("walk");
@@ -1224,9 +1303,10 @@ function renderRoster() {
   document.getElementById("cloneBtn").disabled = chonks.length >= MAX_CHONKS;
   document.getElementById("poseWho").textContent = sel ? `· #${sel.id}` : "";
 }
-function select(c) { sel = c; snapCamera = false; renderRoster(); syncPoseUI(); saveSoon(); }
+function select(c) { sel = c; snapCamera = false; renderRoster(); syncPoseUI(); saveSoon(); if (mode === "photo" && picked?.ref !== c) setPicked({ kind: "chonk", ref: c }); }
 function removeChonk(c) {
   if (chonks.length < 2) return;
+  if (picked?.ref === c) setPicked(null);
   chonks.splice(chonks.indexOf(c), 1); c.remove();
   if (sel === c) sel = chonks[0];
   renderRoster(); syncPoseUI(); saveSoon();
@@ -1344,7 +1424,7 @@ turnEl.addEventListener("input", () => { if (sel) sel.yaw = THREE.MathUtils.degT
 const lensEl = document.getElementById("lens"), lensOut = document.getElementById("lensOut");
 const applyLens = () => { if (mode !== "photo") { lensOut.textContent = lensEl.value + "mm"; return; } camera.fov = THREE.MathUtils.radToDeg(2 * Math.atan(12 / +lensEl.value)); camera.updateProjectionMatrix(); lensOut.textContent = lensEl.value + "mm"; };
 lensEl.addEventListener("input", applyLens);
-document.getElementById("resetCam").onclick = () => { if (!sel) return; cam.yaw = sel.yaw; cam.pitch = 0.18; cam.dist = 3.2; lensEl.value = 35; applyLens(); };
+document.getElementById("resetCam").onclick = () => { if (!sel) return; setCamMode("follow"); cam.yaw = sel.yaw; cam.pitch = 0.18; cam.dist = 3.2; lensEl.value = 35; applyLens(); };
 const frameEl = document.getElementById("frame");
 document.getElementById("guides").addEventListener("change", (e) => frameEl.classList.toggle("noguides", !e.target.checked));
 const ASPECTS = { "1:1": [1, 1, 2048, 2048], "4:5": [4, 5, 1638, 2048], "16:9": [16, 9, 2560, 1440], "9:16": [9, 16, 1152, 2048] };
@@ -1389,7 +1469,9 @@ async function snap() {
   const cx = frameRect.x + frameRect.w / 2, cy = frameRect.y + frameRect.h / 2;
   const ox = frameRect.x + innerWidth / 2 - cx, oy = frameRect.y + innerHeight / 2 - cy;
   camera.setViewOffset(innerWidth * s, innerHeight * s, ox * s, oy * s, OW, OH); camera.updateProjectionMatrix();
+  const gizmoWasVisible = gizmoHelper.visible; gizmoHelper.visible = false;
   renderer.render(scene, camera);
+  gizmoHelper.visible = gizmoWasVisible;
   const out = document.createElement("canvas"); out.width = OW; out.height = OH;
   const ctx = out.getContext("2d"); ctx.drawImage(renderer.domElement, 0, 0, OW, OH);
   renderer.setPixelRatio(prevPR); resize();
@@ -1453,18 +1535,315 @@ function animate() {
     c.rig.pose(anim, freeze ? c.phase * P.period : t + c.offset);
   }
   updateCamera(dt);
-  for (const fn of kit?.updates ?? []) fn(t, dt, cam.target);
+  for (const fn of kit?.updates ?? []) fn(t, dt, focusPoint());
   // shadows and the soft fill follow the action
-  sun.target.position.copy(cam.target); sun.position.copy(cam.target).addScaledVector(sunDir, 30); sun.target.updateMatrixWorld();
-  fill.position.copy(camera.position).add(new THREE.Vector3(0, 2.5, 0)); fill.target.position.copy(cam.target); fill.target.updateMatrixWorld();
+  const focus = focusPoint();
+  sun.target.position.copy(focus); sun.position.copy(focus).addScaledVector(sunDir, 30); sun.target.updateMatrixWorld();
+  fill.position.copy(camera.position).add(new THREE.Vector3(0, 2.5, 0)); fill.target.position.copy(focus); fill.target.updateMatrixWorld();
   sky.position.copy(camera.position);
   renderer.render(scene, camera);
   requestAnimationFrame(animate);
 }
 
+
+/* ===================================================================
+   Free camera: fly anywhere, independent of your Chonk
+   =================================================================== */
+let camMode = "follow";
+const freeCam = { pos: new THREE.Vector3(), yaw: 0, pitch: 0 };
+function freeForward(out = new THREE.Vector3()) {
+  return out.set(-Math.sin(freeCam.yaw) * Math.cos(freeCam.pitch), Math.sin(freeCam.pitch), -Math.cos(freeCam.yaw) * Math.cos(freeCam.pitch));
+}
+function setCamMode(m) {
+  if (m === camMode) return;
+  if (m === "free") {
+    freeCam.pos.copy(camera.position);
+    const d = new THREE.Vector3(); camera.getWorldDirection(d);
+    freeCam.yaw = Math.atan2(-d.x, -d.z); freeCam.pitch = Math.asin(THREE.MathUtils.clamp(d.y, -1, 1));
+  } else if (sel) {
+    // hand the view back to the follow camera from where the free camera was looking
+    cam.yaw = Math.atan2(camera.position.x - sel.pos.x, camera.position.z - sel.pos.z);
+    cam.dist = Math.max(1.2, Math.min(14, camera.position.distanceTo(sel.pos)));
+  }
+  camMode = m; keys.clear(); jumpQueued = false;
+  if (sel && m === "free") sel.moveAnim = "idle";
+  document.body.classList.toggle("freecam", m === "free");
+  for (const b of document.querySelectorAll("[data-freecam]")) b.setAttribute("aria-pressed", m === "free");
+  toast(m === "free" ? "Free camera on. WASD to fly, Q and E for down and up, drag to look, F to go back." : "Camera follows your Chonk again.");
+}
+function toggleFreeCam() { setCamMode(camMode === "free" ? "follow" : "free"); }
+function freeCamDolly(amount) { freeCam.pos.addScaledVector(freeForward(), amount); }
+function updateFreeCam(dt) {
+  let f = 0, r = 0, u = 0;
+  if (keys.has("KeyW") || keys.has("ArrowUp")) f += 1; if (keys.has("KeyS") || keys.has("ArrowDown")) f -= 1;
+  if (keys.has("KeyD") || keys.has("ArrowRight")) r += 1; if (keys.has("KeyA") || keys.has("ArrowLeft")) r -= 1;
+  if (keys.has("KeyE") || keys.has("Space")) u += 1; if (keys.has("KeyQ") || keys.has("KeyC")) u -= 1;
+  if (joy.active) { r += joy.x; f -= joy.y; }
+  const fast = keys.has("ShiftLeft") || keys.has("ShiftRight");
+  const speed = fast ? 9 : 3;
+  const fwd = freeForward(), right = new THREE.Vector3(Math.cos(freeCam.yaw), 0, -Math.sin(freeCam.yaw));
+  freeCam.pos.addScaledVector(fwd, f * speed * dt).addScaledVector(right, r * speed * dt); freeCam.pos.y += u * speed * dt;
+  freeCam.pos.clampScalar(-400, 400);
+  camera.position.copy(freeCam.pos); camera.rotation.set(freeCam.pitch, freeCam.yaw, 0, "YXZ");
+}
+// where shadows, snow and other effects centre themselves
+function focusPoint() {
+  if (camMode === "free") return new THREE.Vector3().copy(camera.position).addScaledVector(freeForward(), 5);
+  return cam.target;
+}
+for (const b of document.querySelectorAll("[data-freecam]")) b.addEventListener("click", () => { toggleFreeCam(); b.blur(); });
+
+/* ===================================================================
+   3D traits as props (all 270 Chonks traits, CC0, packed from Ztudio)
+   =================================================================== */
+const TRAITS_B64 = "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";
+let traitCatalog = null;
+async function loadTraitCatalog() {
+  if (traitCatalog) return traitCatalog;
+  const bin = Uint8Array.from(atob(TRAITS_B64), c => c.charCodeAt(0));
+  const raw = new Uint8Array(await new Response(new Blob([bin]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).arrayBuffer());
+  const n = new DataView(raw.buffer).getUint32(0);
+  const names = JSON.parse(new TextDecoder().decode(raw.subarray(4, 4 + n)));
+  let o = 4 + n; const list = [];
+  for (const [name, cat] of names) {
+    const mn = [raw[o], raw[o + 1], raw[o + 2]], d = [raw[o + 3], raw[o + 4], raw[o + 5]], np = raw[o + 6]; o += 7;
+    const pal = []; for (let i = 0; i < np; i++) pal.push((raw[o + i * 3] << 16) | (raw[o + i * 3 + 1] << 8) | raw[o + i * 3 + 2]); o += np * 3;
+    const size = d[0] * d[1] * d[2], grid = raw.subarray(o, o + size); o += size;
+    list.push({ name, cat, mn, d, pal, grid, id: list.length });
+  }
+  return (traitCatalog = list);
+}
+function traitVoxels(t) {
+  const out = [], [dx, dy] = t.d;
+  for (let i = 0; i < t.grid.length; i++) if (t.grid[i]) out.push({ x: (i % dx) + t.mn[0], y: (Math.floor(i / dx) % dy) + t.mn[1], z: Math.floor(i / (dx * dy)) + t.mn[2], color: t.pal[t.grid[i] - 1] });
+  return out;
+}
+const propMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1, metalness: 0 });
+const props = [];
+function makeProp(t) {
+  const vox = traitVoxels(t), maxY = t.mn[1] + t.d[1] - 1;
+  const cx = t.mn[0] + t.d[0] / 2, cz = t.mn[2] + t.d[2] / 2;
+  // stand it on its lowest voxel, centred, facing the same way a Chonk faces
+  const geo = voxelGeometry(vox.map(v => ({ x: v.x, y: maxY - v.y, z: v.z, color: v.color })), [-cx, 0, -cz]);
+  const mesh = new THREE.Mesh(geo, propMat); mesh.castShadow = mesh.receiveShadow = true;
+  const inner = new THREE.Group(); inner.scale.setScalar(0.075); inner.add(mesh);
+  const obj = new THREE.Group(); obj.add(inner);
+  const p = { obj, trait: t }; obj.userData.prop = p;
+  return p;
+}
+function spawnSpot() {
+  if (camMode === "free" || !sel) {
+    const f = freeForward(); if (camMode !== "free") camera.getWorldDirection(f);
+    const p = camera.position.clone().addScaledVector(new THREE.Vector3(f.x, 0, f.z).normalize(), 2.5);
+    p.y = groundAt(p.x, p.z, camera.position.y + 1) ?? 0; return p;
+  }
+  // beside your Chonk as the camera sees it, so it doesn't block the view; each new one steps further out
+  const right = new THREE.Vector3().setFromMatrixColumn(camera.matrixWorld, 0); right.y = 0; right.normalize();
+  const n = props.length % 6, side = n % 2 ? -1 : 1, dist = 0.75 + Math.floor(n / 2) * 0.45;
+  const p = sel.pos.clone().addScaledVector(right, side * dist);
+  p.y = groundAt(p.x, p.z, sel.pos.y + 1) ?? sel.pos.y; return p;
+}
+function addProp(t, { at = null, rotY = null, scale = 1 } = {}) {
+  if (props.length >= 60) { toast("That's 60 props. Remove some before adding more."); return null; }
+  const p = makeProp(t);
+  p.obj.position.copy(at ?? spawnSpot()); p.obj.rotation.y = rotY ?? (sel ? sel.yaw : 0); p.obj.scale.setScalar(scale);
+  scene.add(p.obj); props.push(p); renderProps();
+  if (mode === "photo") setPicked({ kind: "prop", ref: p });
+  return p;
+}
+function removeProp(p) {
+  if (picked?.ref === p) setPicked(null);
+  props.splice(props.indexOf(p), 1); scene.remove(p.obj); p.obj.traverse(o => o.geometry?.dispose());
+  renderProps();
+}
+function clearProps() { for (const p of [...props]) removeProp(p); }
+
+/* prop picker UI */
+const TRAIT_CATS = ["Accessory", "Head", "Hair", "Face", "Top", "Bottom", "Shoes"];
+let traitCat = "Accessory", traitQuery = "";
+const traitCatsEl = document.getElementById("traitCats"), traitListEl = document.getElementById("traitList"), traitSearch = document.getElementById("traitSearch");
+for (const c of TRAIT_CATS) { const b = document.createElement("button"); b.type = "button"; b.textContent = c; b.dataset.cat = c;
+  b.onclick = () => { traitCat = c; traitQuery = ""; traitSearch.value = ""; renderTraitList(); }; traitCatsEl.append(b); }
+traitSearch.addEventListener("input", () => { traitQuery = traitSearch.value.trim().toLowerCase(); renderTraitList(); });
+async function renderTraitList() {
+  const list = await loadTraitCatalog();
+  for (const b of traitCatsEl.children) b.setAttribute("aria-pressed", !traitQuery && b.dataset.cat === traitCat);
+  const shown = traitQuery ? list.filter(t => t.name.toLowerCase().includes(traitQuery)) : list.filter(t => t.cat === traitCat);
+  traitListEl.textContent = "";
+  for (const t of shown.slice(0, 120)) { const b = document.createElement("button"); b.type = "button"; b.textContent = t.name; b.title = `Add ${t.name} (${t.cat})`;
+    b.onclick = () => addProp(t); traitListEl.append(b); }
+  if (!shown.length) { const s = document.createElement("span"); s.className = "hint"; s.textContent = "No traits match that search."; traitListEl.append(s); }
+}
+function renderProps() {
+  const el = document.getElementById("propList"); el.textContent = "";
+  document.getElementById("propCount").textContent = props.length ? `${props.length} in the scene` : "";
+  for (const p of props) {
+    const row = document.createElement("div"); row.className = "member" + (picked?.ref === p ? " sel" : "");
+    const pick = document.createElement("button"); pick.className = "pick"; pick.type = "button";
+    const st = document.createElement("strong"); st.textContent = p.trait.name; const sp = document.createElement("span"); sp.textContent = p.trait.cat;
+    pick.append(st, sp); pick.onclick = () => setPicked({ kind: "prop", ref: p });
+    const rm = document.createElement("button"); rm.className = "rm"; rm.type = "button"; rm.textContent = "×"; rm.setAttribute("aria-label", `Remove ${p.trait.name}`); rm.onclick = () => removeProp(p);
+    row.append(pick, rm); el.append(row);
+  }
+}
+
+/* ===================================================================
+   Picking things in the scene + move / rotate / scale handles
+   =================================================================== */
+let picked = null;          // { kind: "chonk" | "prop" | "painting", ref }
+let gizmoMode = "translate";
+const pickRay = new THREE.Raycaster(), ndc = new THREE.Vector2();
+function pickAt(x, y) {
+  const r = renderer.domElement.getBoundingClientRect();
+  ndc.set(((x - r.left) / r.width) * 2 - 1, -((y - r.top) / r.height) * 2 + 1);
+  pickRay.setFromCamera(ndc, camera);
+  const targets = [...chonks.map(c => c.holder), ...props.map(p => p.obj), ...(kit?.paintings ?? []).map(p => p.art)];
+  const hit = pickRay.intersectObjects(targets, true)[0];
+  if (!hit) { setPicked(null); return; }
+  for (let o = hit.object; o; o = o.parent) {
+    if (o.userData.chonk) return setPicked({ kind: "chonk", ref: o.userData.chonk });
+    if (o.userData.prop) return setPicked({ kind: "prop", ref: o.userData.prop });
+    if (o.userData.painting) return setPicked({ kind: "painting", ref: o.userData.painting });
+  }
+}
+function setPicked(p) {
+  picked = p; gizmo.detach();
+  if (p?.kind === "chonk") { sel = p.ref; snapCamera = false; renderRoster(); syncPoseUI(); gizmo.attach(p.ref.holder); }
+  if (p?.kind === "prop") gizmo.attach(p.ref.obj);
+  if (p?.kind !== "prop" && gizmoMode === "scale") gizmoMode = "translate";
+  applyGizmoMode(); renderPicked(); renderProps();
+}
+function applyGizmoMode() {
+  const chonk = picked?.kind === "chonk";
+  gizmo.setMode(gizmoMode);
+  gizmo.setSpace(gizmoMode === "translate" ? "world" : "local");
+  // Chonks stay on the ground and only turn around their vertical axis
+  gizmo.showX = gizmoMode === "rotate" && chonk ? false : true;
+  gizmo.showZ = gizmoMode === "rotate" && chonk ? false : true;
+  gizmo.showY = gizmoMode === "translate" && chonk ? false : true;
+  for (const b of document.querySelectorAll("#gizmoModes button")) { b.setAttribute("aria-pressed", b.dataset.mode === gizmoMode); b.hidden = b.dataset.mode === "scale" && !(picked?.kind === "prop"); }
+}
+gizmo.addEventListener("objectChange", () => {
+  if (picked?.kind !== "chonk") return;
+  const c = picked.ref, h = c.holder;
+  c.pos.x = h.position.x; c.pos.z = h.position.z; c.yaw = h.rotation.y;
+  const gy = groundAt(c.pos.x, c.pos.z, c.pos.y + 3); if (gy != null) c.pos.y = gy;
+  syncPoseUI();
+});
+for (const b of document.querySelectorAll("#gizmoModes button")) b.addEventListener("click", () => { gizmoMode = b.dataset.mode; applyGizmoMode(); });
+function dropToFloor(p) {
+  const box = new THREE.Box3().setFromObject(p.obj), c = box.getCenter(new THREE.Vector3());
+  const gy = groundAt(c.x, c.z, box.min.y + 0.05) ?? groundAt(c.x, c.z, 50) ?? 0;
+  p.obj.position.y += gy - box.min.y;
+}
+function editKey(e) {
+  if (e.code === "KeyG") { gizmoMode = "translate"; applyGizmoMode(); return true; }
+  if (e.code === "KeyR") { gizmoMode = "rotate"; applyGizmoMode(); return true; }
+  if (e.code === "KeyS" && picked?.kind === "prop" && camMode !== "free") { gizmoMode = "scale"; applyGizmoMode(); return true; }
+  if ((e.code === "Delete" || e.code === "Backspace") && picked?.kind === "prop") { removeProp(picked.ref); return true; }
+  return false;
+}
+
+/* the "Selected" panel */
+function renderPicked() {
+  const sec = document.getElementById("pickedSec"), title = document.getElementById("pickedTitle");
+  const gizmoRow = document.getElementById("gizmoRow"), propRow = document.getElementById("propActions"), paintRow = document.getElementById("paintingTools");
+  document.getElementById("pickHint").hidden = !!picked;
+  document.getElementById("deselect").hidden = !picked;
+  sec.classList.toggle("active", !!picked);
+  gizmoRow.hidden = !(picked && picked.kind !== "painting");
+  propRow.hidden = picked?.kind !== "prop";
+  paintRow.hidden = picked?.kind !== "painting"; paintRow.style.display = paintRow.hidden ? "none" : "flex";
+  document.getElementById("paintStatus").textContent = "";
+  if (!picked) { title.textContent = "Nothing selected"; return; }
+  if (picked.kind === "chonk") title.textContent = `Chonk #${picked.ref.id}`;
+  if (picked.kind === "prop") title.textContent = `${picked.ref.trait.name} · ${picked.ref.trait.cat}`;
+  if (picked.kind === "painting") title.textContent = "Framed picture";
+}
+document.getElementById("deselect").onclick = () => setPicked(null);
+document.getElementById("propDrop").onclick = () => { if (picked?.kind === "prop") dropToFloor(picked.ref); };
+document.getElementById("propDup").onclick = () => {
+  if (picked?.kind !== "prop") return; const src = picked.ref;
+  const at = src.obj.position.clone().add(new THREE.Vector3(0.4, 0, 0.4));
+  const p = addProp(src.trait, { at, rotY: src.obj.rotation.y, scale: src.obj.scale.x }); if (p) p.obj.rotation.copy(src.obj.rotation);
+};
+document.getElementById("propDelete").onclick = () => { if (picked?.kind === "prop") removeProp(picked.ref); };
+
+/* ===================================================================
+   Your own pictures in the frames (gallery, mansion portraits, …)
+   =================================================================== */
+const PAINT_STORE = "chonk-photo-booth-paintings";
+function readPaintStore() { try { return JSON.parse(localStorage.getItem(PAINT_STORE) || "{}"); } catch { return {}; } }
+function writePaintStore(obj) { try { localStorage.setItem(PAINT_STORE, JSON.stringify(obj)); return true; } catch { return false; } }
+function loadImage(src) {
+  return new Promise((res, rej) => { const img = new Image(); if (/^https?:/i.test(src)) img.crossOrigin = "anonymous";
+    img.onload = () => res(img); img.onerror = () => rej(new Error("load")); img.src = src; });
+}
+function normaliseLink(u) {
+  u = u.trim();
+  if (u.startsWith("ipfs://")) u = "https://ipfs.io/ipfs/" + u.slice(7).replace(/^ipfs\//, "");
+  if (u.startsWith("ar://")) u = "https://arweave.net/" + u.slice(5);
+  return u;
+}
+async function setPaintingImage(p, src) {
+  const img = await loadImage(src);
+  const tex = new THREE.Texture(img); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8; tex.needsUpdate = true;
+  if (p.art.material !== p.origMat) { p.art.material.map?.dispose(); p.art.material.dispose(); }
+  p.art.material = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.85 });
+  // reshape the frame to the picture, keeping its height
+  p.group.scale.x = Math.max(0.2, Math.min(5, (img.width / img.height) * p.h / p.w));
+}
+function resetPainting(p) {
+  if (p.art.material !== p.origMat) { p.art.material.map?.dispose(); p.art.material.dispose(); }
+  p.art.material = p.origMat; p.group.scale.x = 1;
+  const store = readPaintStore(); delete store[`${loc.id}:${p.idx}`]; writePaintStore(store);
+}
+function paintStatus(msg, kind = "") { const el = document.getElementById("paintStatus"); el.textContent = msg; el.className = "status " + kind; }
+async function applyToPicked(src, { label }) {
+  if (picked?.kind !== "painting") return;
+  const p = picked.ref;
+  paintStatus("Loading the picture…");
+  try { await setPaintingImage(p, src); }
+  catch {
+    paintStatus(label === "link"
+      ? "That link didn't load. The site may block other pages from using its images. Save the image and use Upload instead."
+      : "That file didn't load as an image.", "err");
+    return;
+  }
+  const store = readPaintStore(); store[`${loc.id}:${p.idx}`] = src;
+  paintStatus(writePaintStore(store) ? "Done. This browser will remember it." : "Done. It's too big to remember after a reload, but it's in the scene now.", "ok");
+}
+document.getElementById("paintFile").addEventListener("change", async (e) => {
+  const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+  // shrink big uploads so they stay light and can be remembered
+  try {
+    const url = URL.createObjectURL(f), img = await loadImage(url); URL.revokeObjectURL(url);
+    const k = Math.min(1, 1400 / Math.max(img.width, img.height)), c = document.createElement("canvas");
+    c.width = Math.round(img.width * k); c.height = Math.round(img.height * k); c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+    await applyToPicked(c.toDataURL("image/jpeg", 0.88), { label: "file" });
+  } catch { paintStatus("That file didn't load as an image.", "err"); }
+});
+document.getElementById("paintLinkForm").addEventListener("submit", (e) => {
+  e.preventDefault(); const u = normaliseLink(document.getElementById("paintLink").value);
+  if (!/^https?:\/\//i.test(u)) { paintStatus("Paste a full image link starting with https://, ipfs:// or ar://", "err"); return; }
+  applyToPicked(u, { label: "link" }); document.activeElement.blur();
+});
+document.getElementById("paintReset").onclick = () => { if (picked?.kind === "painting") { resetPainting(picked.ref); paintStatus("Back to the original artwork."); } };
+
+/* when a location is (re)built */
+function onLocationBuilt() {
+  setPicked(null); clearProps();
+  const store = readPaintStore();
+  for (const p of kit.paintings) { const src = store[`${loc.id}:${p.idx}`]; if (src) setPaintingImage(p, src).catch(() => {}); }
+  document.getElementById("paintHint").hidden = !kit.paintings.length;
+}
+
 /* boot */
 resize(); camera.fov = WALK_FOV; camera.updateProjectionMatrix();
-window.chonkBooth = { get sel() { return sel; }, get chonks() { return chonks; } };
+window.chonkBooth = { get sel() { return sel; }, get chonks() { return chonks; }, get props() { return props; }, get picked() { return picked; }, get camMode() { return camMode; },
+  get paintings() { return kit?.paintings ?? []; }, camera, setPicked, gizmo, pickAt, renderer, freeCamState: freeCam,
+  async addTrait(name) { return addProp((await loadTraitCatalog()).find(t => t.name === name)); },
+  project(obj) { const v = new THREE.Vector3(); obj.getWorldPosition(v); v.project(camera); const r = renderer.domElement.getBoundingClientRect(); return { x: r.left + (v.x + 1) / 2 * r.width, y: r.top + (1 - v.y) / 2 * r.height }; } };
 {
   const saved = loadSaved();
   const startLoc = LOCATIONS.some(l => l.id === saved?.location && !l.custom) ? saved.location : "castle";
@@ -1482,6 +1861,7 @@ window.chonkBooth = { get sel() { return sel; }, get chonks() { return chonks; }
     placeAtSpawn(); renderRoster();
   }
 }
+renderTraitList(); renderPicked(); renderProps();
 animate();
 
 </script>

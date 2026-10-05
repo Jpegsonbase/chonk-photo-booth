@@ -10,6 +10,9 @@ Walk your [Chonks](https://www.chonks.xyz) through 3D locations, pose them toget
 - Walk around with WASD or the arrow keys (Shift to run, Space to jump, 1 to wave, 2 to bow). On phones there's an on-screen joystick.
 - Explore eleven locations: Castle, Office, Mansion, Art Gallery, The Playground, Sunset Beach, Neon Rooftop, Snowy Pines, Moon Base, Red Canyon and Colour Studio. You can also drop in your own `.glb` scene.
 - Clone your Chonk, then load another into your slot to group up to 10 Chonks in one shot.
+- Press **F** for a free camera: fly anywhere with WASD, Q/E for down/up, drag to look.
+- Drop in any of the 270 Chonks 3D traits as props, then click anything (Chonks or props) to move, turn or resize it with on-screen handles.
+- Click a framed picture (gallery or mansion) to hang your own image in it: upload one or paste a link (https, ipfs:// or ar://).
 - Press **P** for photo mode: pick each Chonk's pose, freeze a moment mid-stride, choose a frame shape (1:1, 4:5, 16:9, 9:16) and lens, then snap a PNG up to 2560 px wide.
 
 ## How it works
